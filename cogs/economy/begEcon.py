@@ -12,7 +12,7 @@ cluster = MongoClient(os.getenv("MONGO_TOKEN"))
 db = cluster["ares"]
 collection = db["economy"]
 
-class Beg(commands.cog):
+class Beg(commands.Cog):
     
     def __init__(self, client):
         self.client = client
