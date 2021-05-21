@@ -108,8 +108,8 @@ async def setbal(ctx, amount: int, user: discord.Member = None):
 async def help(ctx):
     he = discord.Embed(title="Ares Help", description="Use a!help <command> for more specific help on a command")
 
-    he.add_field(name = "Economy", value="start, leaderboard, bal, daily, pay, bet, fight, quiz")
-    he.add_field(name = "Misc", value="ping")
+    he.add_field(name = "Economy", value="**start, leaderboard, bal,\n\n daily, pay, bet,\n\n fight, quiz, beg**")
+    he.add_field(name = "Misc", value="**ping**")
     he.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
     await ctx.send(embed = he)
@@ -195,6 +195,15 @@ async def quiz(ctx):
     he7.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
     await ctx.send(embed = he7)
+
+@help.command()
+async def beg(ctx):
+    embed = discord.Embed(title="Beg", description="Initiates a beg for money.")
+
+    embed.add_field(name = "----\na!\n----", value="usage: beg")
+    embed.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
+
+    await ctx.send(embed = embed)
 
 
 client.run(os.getenv("TOKEN"))
