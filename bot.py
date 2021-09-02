@@ -1,5 +1,9 @@
 from re import X
-import discord, random, os, pymongo
+import discord
+import random
+import time
+import os
+import pymongo
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 from pymongo import MongoClient
@@ -10,7 +14,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 prefix = 'a!'
-client = commands.Bot(command_prefix=prefix, help_command=None, case_insensitive=True)
+client = commands.Bot(command_prefix=prefix,
+                      help_command=None, case_insensitive=True)
 client.remove_command('help')
 self_id = 837809072539566121
 
@@ -25,6 +30,9 @@ collection = db["economy"]
 for filename in os.listdir('./cogs/economy'):
     if filename.endswith('.py'):
         client.load_extension(f'cogs.economy.{filename[:-3]}')
+for filename in os.listdir('./cogs/misc'):
+    if filename.endswith('.py'):
+        client.load_extension(f'cogs.misc.{filename[:-3]}')
 
 # - Function for adding ',' in numbers
 def numberate(number):
@@ -41,7 +49,6 @@ def numberate(number):
         result = result[1:]
     return result
 
-
 # - Bot Status Events and Commands
 @client.event
 async def on_ready():
@@ -50,11 +57,19 @@ async def on_ready():
     print("Bot is online")
 
 # - Ping command to check latency
-@client.command()
-@has_permissions(administrator = True)
+@client.slash_command(name="ping")
+@has_permissions(administrator=True)
 async def ping(ctx):
     await ctx.send(f"{ctx.author.mention} pong!\nThe response time for your ping was ``{round(client.latency * 1000)}ms``")
 
+@client.slash_command(guild_ids=[837808972902957128], name="leave")
+async def leave(ctx):
+    if ctx.author.id == 304024578009595907:
+
+        await ctx.send("Goodbye friends...")
+        time.sleep(2)
+        await ctx.send("<3")
+        await ctx.guild.leave()
 
 @client.event  # - Error handling
 async def on_command_error(ctx, error):
@@ -75,135 +90,159 @@ async def on_command_error(ctx, error):
         raise error
 
 
-
-@client.command() # - Command to edit econ database directly 
+@client.slash_command(guild_ids=[837808972902957128], name="setbal")  # - Command to edit econ database directly
 async def setbal(ctx, amount: int, user: discord.Member = None):
-    if ctx.author.id == 304024578009595907: # checks if its me
+    if ctx.author.id == 304024578009595907:  # checks if its me
         if user == None:
             user = ctx.author
         results = collection.find_one({"_id": user.id})
         if results == None:
             await ctx.send("You or the member mentioned dont have an account set up yet! Run ``a!start`` to get it setup and start moneying >:)")
         else:
-            collection.update_one({"_id": user.id}, {"$set":{"balance":amount}})
+            collection.update_one(
+                {"_id": user.id}, {"$set": {"balance": amount}})
             results = collection.find_one({"_id": user.id})
             balresult = results["balance"]
 
             setbal_embed = discord.Embed(title="Set Balance")
             setbal_embed.set_author(name=ctx.author.name)
-            setbal_embed.set_thumbnail(url="https://media.discordapp.net/attachments/837808972902957131/842054757362696274/arecoin.png")
-            setbal_embed.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
+            setbal_embed.set_thumbnail(
+                url="https://media.discordapp.net/attachments/837808972902957131/842054757362696274/arecoin.png")
+            setbal_embed.set_footer(
+                text=ctx.guild.name, icon_url=ctx.guild.icon.url)
             setbal_embed.add_field(name="** **", value="** **", inline=False)
-            setbal_embed.add_field(name=f"Bal {user.name}'s", value=f"balance has been set to ``{numberate(balresult)} coins``", inline=False)
+            setbal_embed.add_field(
+                name=f"Bal {user.name}'s", value=f"balance has been set to ``{numberate(balresult)} coins``", inline=False)
             setbal_embed.add_field(name="** **", value="** **", inline=False)
 
             await ctx.send(embed=setbal_embed)
     else:
         await ctx.send("You can't do that weirdo 🤨")
-    
 
 
 # - Help command group
 @client.group(invoke_without_command=True)
 async def help(ctx):
-    he = discord.Embed(title="Ares Help", description="Use a!help <command> for more specific help on a command")
+    he = discord.Embed(
+        title="Ares Help", description="Use a!help <command> for more specific help on a command")
 
-    he.add_field(name = "Economy", value="**start, leaderboard, bal,\n\n daily, pay, bet,\n\n fight, quiz, beg**")
-    he.add_field(name = "Misc", value="**ping**")
+    he.add_field(
+        name="Economy", value="**start, leaderboard, bal,\n\n daily, pay, bet,\n\n fight, quiz, beg**")
+    he.add_field(name="Misc", value="**ping**")
     he.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he)
+    await ctx.send(embed=he)
 
 # - Help command subgroups
 @help.command()
 async def start(ctx):
-    he1 = discord.Embed(title="Start", description="Starts your economy and banking account for Ares Economy")
+    he1 = discord.Embed(
+        title="Start", description="Starts your economy and banking account for Ares Economy")
 
-    he1.add_field(name = "----\na!\n----", value="usage: start")
+    he1.add_field(name="----\na!\n----", value="usage: start")
     he1.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he1)
+    await ctx.send(embed=he1)
+
 
 @help.command()
 async def bal(ctx):
-    he2 = discord.Embed(title="Bal", description="Checks the balance of the user mentioned, if none are mentioned then the balance of the author is sent")
+    he2 = discord.Embed(
+        title="Bal", description="Checks the balance of the user mentioned, if none are mentioned then the balance of the author is sent")
 
-    he2.add_field(name = "----\na!\n----", value="usage: bal [@user]")
+    he2.add_field(name="----\na!\n----", value="usage: bal [@user]")
     he2.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he2)
+    await ctx.send(embed=he2)
+
 
 @help.command()
 async def pay(ctx):
-    he3 = discord.Embed(title="Pay", description="Pays the mentioned user amount specified")
+    he3 = discord.Embed(
+        title="Pay", description="Pays the mentioned user amount specified")
 
-    he3.add_field(name = "----\na!\n----", value="usage: pay <@user> <amount>")
+    he3.add_field(name="----\na!\n----", value="usage: pay <@user> <amount>")
     he3.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he3)
+    await ctx.send(embed=he3)
+
 
 @help.command()
 async def bet(ctx):
-    he4 = discord.Embed(title="Bet", description="Gambles amount of money specified for a chance to double up or lose it all \n There is also an extremely small chance at hitting jackpot")
+    he4 = discord.Embed(
+        title="Bet", description="Gambles amount of money specified for a chance to double up or lose it all \n There is also an extremely small chance at hitting jackpot")
 
-    he4.add_field(name = "----\na!\n----", value="usage: bet <amount>")
+    he4.add_field(name="----\na!\n----", value="usage: bet <amount>")
     he4.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he4)
+    await ctx.send(embed=he4)
+
 
 @help.command()
 async def fight(ctx):
-    he5 = discord.Embed(title="Fight", description="Sets a fight with mentioned user. Winner takes bet amount.")
+    he5 = discord.Embed(
+        title="Fight", description="Sets a fight with mentioned user. Winner takes bet amount.")
 
-    he5.add_field(name = "----\na!\n----", value="usage: fight <player> <amount>")
+    he5.add_field(name="----\na!\n----",
+                  value="usage: fight <player> <amount>")
     he5.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he5)
+    await ctx.send(embed=he5)
+
 
 @help.command()
 async def leaderboard(ctx):
-    he6 = discord.Embed(title="Leaderboard", description="Displays global leaderboard.")
+    he6 = discord.Embed(title="Leaderboard",
+                        description="Displays global leaderboard.")
 
-    he6.add_field(name = "----\na!\n----", value="usage: leaderboard")
+    he6.add_field(name="----\na!\n----", value="usage: leaderboard")
     he6.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he6)
+    await ctx.send(embed=he6)
+
 
 @help.command()
 async def ping(ctx):
-    he6 = discord.Embed(title="Ping", description="Pings the bot and returns the response time in milliseconds.")
+    he6 = discord.Embed(
+        title="Ping", description="Pings the bot and returns the response time in milliseconds.")
 
-    he6.add_field(name = "----\na!\n----", value="usage: ping")
+    he6.add_field(name="----\na!\n----", value="usage: ping")
     he6.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he6)
+    await ctx.send(embed=he6)
+
 
 @help.command()
 async def daily(ctx):
-    he7 = discord.Embed(title="Daily", description="Claims the daily rewards for the author of the command.")
+    he7 = discord.Embed(
+        title="Daily", description="Claims the daily rewards for the author of the command.")
 
-    he7.add_field(name = "----\na!\n----", value="usage: daily")
+    he7.add_field(name="----\na!\n----", value="usage: daily")
     he7.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he7)
+    await ctx.send(embed=he7)
+
 
 @help.command()
 async def quiz(ctx):
-    he7 = discord.Embed(title="Quiz", description="Starts a quiz, get the correct answer and you earn money.")
+    he7 = discord.Embed(
+        title="Quiz", description="Starts a quiz, get the correct answer and you earn money.")
 
-    he7.add_field(name = "----\na!\n----", value="usage: quiz")
+    he7.add_field(name="----\na!\n----", value="usage: quiz")
     he7.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = he7)
+    await ctx.send(embed=he7)
+
 
 @help.command()
 async def beg(ctx):
-    embed = discord.Embed(title="Beg", description="Initiates a beg for money.")
+    embed = discord.Embed(
+        title="Beg", description="Initiates a beg for money.")
 
-    embed.add_field(name = "----\na!\n----", value="usage: beg")
+    embed.add_field(name="----\na!\n----", value="usage: beg")
     embed.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-    await ctx.send(embed = embed)
+    await ctx.send(embed=embed)
 
 
 client.run(os.getenv("TOKEN"))
